@@ -1,0 +1,27 @@
+{
+  "name": "ido-launchpad",
+  "version": "1.0.0",
+  "description": "IDO Launchpad",
+  "main": "index.js",
+  "scripts": {
+    "devnet": "ganache-cli --gasLimit 8000000 -a 50 -e 1000000 -i 5777 -m 'funny door sample enrich female wedding stereo crane setup shop dwarf dismiss'",
+    "clean": "rm -rf ./build",
+    "compile": "rm -rf build && yarn truffle compile",
+    "deploy": "yarn truffle migrate --network test",
+    "console": "yarn truffle console --network test",
+    "test": "yarn truffle test --network test"
+  },
+  "repository": "git@github.com:KohliSuraj/IDO-launchpad.git",
+  "author": "Suraj Kohli <kohlisuraj94@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "bn-chai": "^1.0.1",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "ganache-cli": "^6.12.2",
+    "truffle": "^5.4.17",
+    "web3": "^1.6.0"
+  }
+}
