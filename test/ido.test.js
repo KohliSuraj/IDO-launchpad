@@ -14,15 +14,18 @@ const Pool = artifacts.require("./Pool");
 
 const getString = async (val) => await val.toString()
 const getEther = (val) => web3.utils.toWei(val.toString(), 'ether')
+const getTime = (futureSeconds) => Number.parseInt((Date.now() + (1000 * futureSeconds)) / 1000).toString()
 
 contract('IDO Launchpad', accounts => {
     let ido
-    let administrator = accounts[0]
+    let administrator = accounts[9]
     let poolOwner = accounts[1]
     let whitelistedUser = accounts[2]
-    let poolId;
-    let poolAddress;
-    let poolInstance;
+    let poolId
+    let poolAddress
+    let poolInstance
+    let startTime
+    let endTime
 
     beforeEach(async () => {
         ido = await IDOLaunchpad.new({ from: administrator })
@@ -33,7 +36,9 @@ contract('IDO Launchpad', accounts => {
     })
 
     it('can create a new Pool', async () => {
-        const txnReceipt = await ido.createPool(getEther(1), 0, 1, 1, { from: poolOwner })
+        startTime = getTime(1)
+        endTime = getTime(240)
+        const txnReceipt = await ido.createPool(getEther(1), startTime, endTime, 1, { from: poolOwner })
         const args = txnReceipt.logs[0].args
 
         poolId = args['0'].toNumber()
@@ -54,8 +59,8 @@ contract('IDO Launchpad', accounts => {
 
         it('can access newly deployed Pool Contract', async () => {
             getString(await poolInstance.hardCap()).should.eventually.eq(getEther(1))
-            getString(await poolInstance.startDateTime()).should.eventually.eq('0')
-            getString(await poolInstance.endDateTime()).should.eventually.eq('1')
+            getString(await poolInstance.startTime()).should.eventually.eq(startTime)
+            getString(await poolInstance.endTime()).should.eventually.eq(endTime)
             getString(await poolInstance.exchangeRate()).should.eventually.eq('1')
             getString(await poolInstance.status()).should.eventually.eq(Pool.PoolStatus.UPCOMING.toString())
         })
@@ -72,8 +77,12 @@ contract('IDO Launchpad', accounts => {
         it('can change status of pool to ONGOING', async () => {
             // rejected, since pool has status UPCOMING
             await poolInstance.invest({ value: getEther(0.1) }).should.be.rejected
-            // test function changes status to ONGOING
-            await poolInstance.test()
+
+            // sleep so that the pool start time is in the past
+            await new Promise(r => setTimeout(r, 1000));
+
+            await poolInstance.updateStatus().should.be.rejected
+            await poolInstance.updateStatus({ from: poolOwner })
             getString(await poolInstance.status()).should.eventually.eq(Pool.PoolStatus.ONGOING.toString())
         })
 
@@ -91,18 +100,5 @@ contract('IDO Launchpad', accounts => {
             await poolInstance.invest({ value: getEther(1), from: whitelistedUser }).should.be.rejected
         })
     })
-
-    // it('Access IDO Launchpad Contract', async () => {
-    //     // only pool owner can create pool
-    //     // await ido.createPool({ from: poolOwner })
-
-    //     // await ido.test()
-
-    //     // only pool owner can addAddressesToWhitelist
-    //     // await ido.addAddressesToWhitelist(1, [whitelistedUser], { from: poolOwner, value: web3.utils.toWei("1", "ether") })
-
-    //     // only whitelisted user can invest
-    //     // await ido.invest(1, { from: whitelistedUser })
-    // })
 
 })

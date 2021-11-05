@@ -5,6 +5,12 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+// TODO
+// oversubscribed logic
+// integration of ERC20 token contract via an exchange??
+// test with proper exchange rate -> token allocation
+// token withdrawal
+
 contract Pool {
     using SafeMath for uint256;
 
@@ -17,8 +23,10 @@ contract Pool {
     address public launchpadAddress;
     address public owner;
     uint256 public hardCap;
-    uint256 public startDateTime;
-    uint256 public endDateTime;
+
+    uint256 public startTime;
+    uint256 public endTime;
+
     IERC20 projectTokenAddress;
     PoolStatus public status;
     uint256 public exchangeRate;
@@ -69,16 +77,18 @@ contract Pool {
     constructor(
         address _poolOwner,
         uint256 _hardCap,
-        uint256 _startDateTime,
-        uint256 _endDateTime,
+        uint256 _startTime,
+        uint256 _endTime,
         IERC20 _projectTokenAddress,
         uint256 _exchangeRate
     ) {
         launchpadAddress = msg.sender;
         owner = _poolOwner;
         hardCap = _hardCap;
-        startDateTime = _startDateTime;
-        endDateTime = _endDateTime;
+
+        startTime = _startTime;
+        endTime = _endTime;
+
         projectTokenAddress = _projectTokenAddress;
         exchangeRate = _exchangeRate;
 
@@ -100,6 +110,21 @@ contract Pool {
     // TESTING FUNCTION TO BE REMOVED
     function test() external {
         status = PoolStatus.ONGOING;
+    }
+
+    function updateStatus() external onlyPoolOwner {
+        // update status of Pool depending on the block timestamps
+        if (
+            startTime < block.timestamp &&
+            endTime > block.timestamp &&
+            status == PoolStatus.UPCOMING
+        ) {
+            status = PoolStatus.ONGOING;
+            emit PoolIsOngoing();
+        } else if (endTime < block.timestamp && status == PoolStatus.ONGOING) {
+            status == PoolStatus.FINISHED;
+            emit PoolIsFinished();
+        }
     }
 
     function invest()
