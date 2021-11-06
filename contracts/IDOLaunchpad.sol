@@ -2,7 +2,6 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./Pool.sol";
@@ -20,20 +19,17 @@ contract IDOLaunchpad {
 
     // user role --> Adminstrator, Pool owner, Investor
 
-    // who can call this function?? --> anyone
-    // what amount will pool owner invest in this? --> None
+    // exchange rate is basically the rate at which tokens are offered per 1 eth
     function createPool(
         uint256 _hardCap,
         uint256 _startTime,
         uint256 _endTime,
+        IERC20 _projectTokenAddress,
         uint256 _exchangeRate
     ) external returns (address _poolAddress) {
-        require(_startTime >= block.timestamp, 'start time is in the past');
-        require(_endTime >= _startTime, 'end time is less than the start time');
-
-        // project token address --> this is the IERC20 token --> ONLY IERC20 Token Owner can create POOL FOR THIS IERC20 TOKEN
-        // how will this code validate the the msg.sender has access to the IERC20 projectTokenAddress
-        ERC20 token = ERC20(address(0));
+        require(_startTime >= block.timestamp, "start time is in the past");
+        require(_endTime >= _startTime, "end time is less than the start time");
+        require(_hardCap > 0, "harcap cannot be 0");
 
         address _poolOwner = msg.sender;
 
@@ -42,7 +38,7 @@ contract IDOLaunchpad {
             _hardCap,
             _startTime,
             _endTime,
-            token,
+            _projectTokenAddress,
             _exchangeRate
         );
         _poolAddress = address(_pool);

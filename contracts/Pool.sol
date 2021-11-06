@@ -6,10 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // TODO
-// oversubscribed logic
-// integration of ERC20 token contract via an exchange??
-// test with proper exchange rate -> token allocation
 // token withdrawal
+// add and use a decimal field for calculating the display value
 
 contract Pool {
     using SafeMath for uint256;
@@ -95,9 +93,10 @@ contract Pool {
         emit PoolIsUpcoming();
     }
 
-    // add users to pool whitelist
+    // Pool must be created i.e. Pool contract must exist
     function addAddressesToWhitelist(address[] memory _users)
         external
+        poolExists
         onlyPoolOwner
     {
         require(_users.length > 0, "users list is empty");
@@ -105,11 +104,6 @@ contract Pool {
         for (uint256 i = 0; i < _users.length; ++i) {
             whitelist[_users[i]] = true;
         }
-    }
-
-    // TESTING FUNCTION TO BE REMOVED
-    function test() external {
-        status = PoolStatus.ONGOING;
     }
 
     function updateStatus() external onlyPoolOwner {
@@ -136,16 +130,20 @@ contract Pool {
         nonZero(msg.value)
     {
         uint256 _value = msg.value;
+        uint256 _tokenValue = _value * exchangeRate;
+
+        // check project token balance, this contract must have allowance to spend atleast _tokenValue
+        require(
+            (IERC20(projectTokenAddress).allowance(owner, address(this))) >=
+                _tokenValue,
+            "Not enough allowance for project tokens"
+        );
 
         // check Pool is not over subscribed
+        require(totalRaised.add(_value) <= hardCap, "Pool is oversubscribed");
+
         totalRaised = totalRaised.add(_value);
-        require(totalRaised <= hardCap, "Pool is oversubscribed");
-
-        // store ETH for investor
         balanceOf[msg.sender] = balanceOf[msg.sender].add(_value);
-
-        // track investor's token
-        uint256 _tokenValue = _value * exchangeRate;
         tokenBalanceOf[msg.sender] = tokenBalanceOf[msg.sender].add(
             _tokenValue
         );
