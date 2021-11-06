@@ -87,11 +87,11 @@ contract('IDO Launchpad', accounts => {
         it('can add addresses to whitelist', async () => {
             // rejected, since only pool owner can call this function
             await poolInstance.addAddressesToWhitelist([investor], { from: investor }).should.be.rejected
-            await poolInstance.whitelist(investor).should.eventually.eq(false)
+            await poolInstance.isWhitelisted(investor).should.eventually.eq(false)
 
             await poolInstance.addAddressesToWhitelist([investor, accounts[3]], { from: poolOwner })
-            await poolInstance.whitelist(investor).should.eventually.eq(true)
-            await poolInstance.whitelist(accounts[3]).should.eventually.eq(true)
+            await poolInstance.isWhitelisted(investor).should.eventually.eq(true)
+            await poolInstance.isWhitelisted(accounts[3]).should.eventually.eq(true)
         })
 
         it('can change status of pool to ONGOING', async () => {
