@@ -17,6 +17,25 @@ This code implements an IDO Launchpad which enables:
 - Whitelisted users can invest in any of the Pool
 - Once, the Pool is FINISHED then investors can withdraw tokens
 
+## Assumptions
+
+- All amounts are 18 decimals
+
+- Exchange rate is basically the rate at which tokens are offered per 1 eth
+  - e.g. for an exchange rate of 10,000
+  - investor will get 10,000 tokens for 1 eth
+  - investor will get 100 tokens for 0.01 eth
+  - investor will get 1 token for 0.0001 eth
+
+- Anyone can be a Pool Owner as long as they provide a valid ERC20 project address
+  - This can be restricted by adding a new whitelist in IDO Launchpad contract
+  - Also, allowance check of a certain amount of tokens at Pool Creation can also be implemented
+
+- The Allowance of ERC20 tokens to the Pool Contract is verified at the time the investor makes the investment
+  - As of now, there is no check to verify if Project Owner makes allowance '0', after investments into the Pool
+  
+- At withdrawal, the investor can withdraw full token balance (no option for partial withdrawal)
+
 ## Test the app
 
 You can test the app by running following commands:
