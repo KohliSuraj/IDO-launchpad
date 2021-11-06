@@ -17,6 +17,13 @@ This code implements an IDO Launchpad which enables:
 - Whitelisted users can invest in any of the Pool
 - Once, the Pool is FINISHED then investors can withdraw tokens
 
+## Test the app
+
+You can test the app by running following commands:
+- `yarn install`
+- `yarn devnet`
+- `yarn test`
+
 ## Commands
 
 * `yarn install` - install dependencies
