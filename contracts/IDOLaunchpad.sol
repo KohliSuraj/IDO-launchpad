@@ -11,6 +11,7 @@ contract IDOLaunchpad {
 
     string private _name;
     uint256 private _nextPoolId;
+    address private _administrator;
 
     // pool id mapped to pool address
     mapping(uint256 => address) private pools;
@@ -19,17 +20,22 @@ contract IDOLaunchpad {
 
     constructor(string memory name_) {
         _name = name_;
+        _administrator = msg.sender;
     }
 
     function name() public view returns (string memory) {
         return _name;
     }
 
+    function admin() public view returns (address) {
+        return _administrator;
+    }
+
     function getPoolAddress(uint256 poolId) public view returns (address) {
         return pools[poolId];
     }
 
-    // user role --> Adminstrator, Pool owner, Investor
+    // user role --> Administrator, Pool owner, Investor
 
     // exchange rate is basically the rate at which tokens are offered per 1 eth
     function createPool(

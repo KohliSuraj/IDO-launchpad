@@ -41,6 +41,7 @@ contract('IDO Launchpad', accounts => {
 
     it('has default values', async () => {
         await ido.name().should.eventually.eq('IDO Launchpad')
+        await ido.admin().should.eventually.eq(administrator)
 
         getString(await erc20.balanceOf(poolOwner)).should.eventually.eq(erc20Balance)
         getString(await erc20.name()).should.eventually.eq('TEST TOKEN')
