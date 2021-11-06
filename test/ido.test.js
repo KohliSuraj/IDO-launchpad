@@ -1,13 +1,13 @@
 const web3 = require('web3')
 
 const chai = require('chai')
-const chaiAsPromised = require("chai-as-promised")
+const chaiAsPromised = require('chai-as-promised')
 chai.use(chaiAsPromised)
 const should = chai.should()
 
-const IDOLaunchpad = artifacts.require("./IDOLaunchpad")
-const Pool = artifacts.require("./Pool")
-const ERC20Test = artifacts.require("./ERC20Test")
+const IDOLaunchpad = artifacts.require('./IDOLaunchpad')
+const Pool = artifacts.require('./Pool')
+const ERC20Test = artifacts.require('./ERC20Test')
 
 const getString = async (val) => await val.toString()
 const getEtherValue = (val) => web3.utils.toWei(val.toString(), 'ether')
@@ -33,15 +33,18 @@ contract('IDO Launchpad', accounts => {
     const exchangeRate = 10000
 
     before(async () => {
-        ido = await IDOLaunchpad.new({ from: administrator })
+        ido = await IDOLaunchpad.new("IDO Launchpad", { from: administrator })
         erc20 = await ERC20Test.new({ from: poolOwner })
         erc20address = erc20.address
-        console.log("Deploying IDO and ERC20 contracts")
+        console.log('Deploying IDO and ERC20 contracts')
     })
 
     it('has default values', async () => {
         await ido.name().should.eventually.eq('IDO Launchpad')
+
         getString(await erc20.balanceOf(poolOwner)).should.eventually.eq(erc20Balance)
+        getString(await erc20.name()).should.eventually.eq('TEST TOKEN')
+        getString(await erc20.symbol()).should.eventually.eq('TST')
     })
 
     it('can create a new Pool', async () => {
@@ -56,16 +59,16 @@ contract('IDO Launchpad', accounts => {
         const _poolOwner = args['1']
         _poolOwner.should.eq(poolOwner)
 
-        poolAddress = await ido.pools(poolId)
+        poolAddress = await ido.getPoolAddress(poolId)
     })
 
-    describe("Once Pool Created", () => {
+    describe('Once Pool Created', () => {
 
         before(async () => {
             poolInstance = await Pool.at(poolAddress)
             await poolInstance.owner().should.eventually.eq(poolOwner)
             await erc20.approve(poolAddress, erc20Balance, { from: poolOwner })
-            console.log("Saving pool instance and giving allowance for future use")
+            console.log('Saving pool instance and giving allowance for future use')
         })
 
         it('check erc20 token allowance', async () => {
@@ -130,6 +133,11 @@ contract('IDO Launchpad', accounts => {
             getString(await poolInstance.totalRaised()).should.eventually.eq(getEtherValue(1 + 0.0001))
             getString(await poolInstance.balanceOf(accounts[3])).should.eventually.eq(getEtherValue(0.0001))
             getString(await poolInstance.tokenBalanceOf(accounts[3])).should.eventually.eq(getEtherValue(0.0001 * exchangeRate))
+        })
+
+        describe('Once Invested', () => {
+            it('investor can withdraw)', async () => {
+            })
         })
     })
 
