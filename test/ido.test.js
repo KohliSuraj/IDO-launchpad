@@ -29,7 +29,7 @@ contract('IDO Launchpad', accounts => {
     let poolInstance
     let startTime
     let endTime
-    // 10,0000 tokens for each ether
+    // 10,000 tokens for each ether
     const exchangeRate = 10000
 
     before(async () => {
@@ -49,8 +49,9 @@ contract('IDO Launchpad', accounts => {
     })
 
     it('can create a new Pool', async () => {
+        // Pool is in ONGOING status for 4 seconds
         startTime = getTime(1)
-        endTime = getTime(240)
+        endTime = getTime(5)
         const txnReceipt = await ido.createPool(getEtherValue(10), startTime, endTime, erc20address, exchangeRate, { from: poolOwner })
         const args = txnReceipt.logs[0].args
 
@@ -99,6 +100,7 @@ contract('IDO Launchpad', accounts => {
             // rejected, since pool has status UPCOMING
             await poolInstance.invest({ value: getEtherValue(0.1) }).should.be.rejected
 
+            console.log("Test case waiting for Pool to reach status ONGOING");
             // sleep so that the pool start time is in the past
             await new Promise(r => setTimeout(r, 1000))
 
@@ -125,6 +127,7 @@ contract('IDO Launchpad', accounts => {
         })
 
         it('cannot invest in Pool if its being oversubscribed', async () => {
+            //  hardcap is 10
             await poolInstance.invest({ value: getEtherValue(20), from: investor }).should.be.rejected
         })
 
@@ -137,8 +140,36 @@ contract('IDO Launchpad', accounts => {
         })
 
         describe('Once Invested', () => {
-            it('investor can withdraw)', async () => {
+            it('investor cannot withdraw if pool not FINISHED', async () => {
+                await poolInstance.withdraw().should.be.rejected
             })
+
+            it('Pool contract status changes to FINISHED after expiry', async () => {
+                // sleep so that the pool end time is in the past
+                console.log("Test case waiting for Pool to reach status FINISHED");
+                await new Promise(r => setTimeout(r, 5000))
+
+                await poolInstance.updateStatus({ from: poolOwner })
+                getString(await poolInstance.status()).should.eventually.eq(Pool.PoolStatus.FINISHED.toString())
+            })
+
+            it('only whitelisted user can withdraw', async () => {
+                getString(await poolInstance.tokenBalanceOf(investor)).should.eventually.eq(getEtherValue(1 * exchangeRate))
+                await poolInstance.withdraw().should.be.rejected
+
+                // token balance is 0 before withdrawing
+                getString(await erc20.balanceOf(investor)).should.eventually.eq(getEtherValue(0))
+                await poolInstance.withdraw({ from: investor })
+                // token balance is 10,000 tokens after withdrawing
+                getString(await erc20.balanceOf(investor)).should.eventually.eq(getEtherValue(10000))
+            })
+
+            it('investor can withdraw only once, since transfer is already made and balance is 0', async () => {
+                getString(await erc20.balanceOf(investor)).should.eventually.eq(getEtherValue(10000))
+                getString(await poolInstance.tokenBalanceOf(investor)).should.eventually.eq(getEtherValue(0))
+                await poolInstance.withdraw({ from: investor }).should.be.rejected
+            })
+
         })
     })
 

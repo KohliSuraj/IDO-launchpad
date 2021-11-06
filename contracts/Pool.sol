@@ -5,10 +5,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-// TODO
-// token withdrawal
-// add and use a decimal field for calculating the display value
-
 contract Pool {
     using SafeMath for uint256;
 
@@ -45,7 +41,7 @@ contract Pool {
         _;
     }
 
-    modifier canInvest() {
+    modifier whitelistedUser() {
         require(
             _whitelist[msg.sender] == true,
             "User not whitelisted for given Pool"
@@ -60,6 +56,11 @@ contract Pool {
 
     modifier poolIsOnGoing() {
         require(_status == PoolStatus.ONGOING, "Pool is not ONGOING");
+        _;
+    }
+
+    modifier poolIsFinished() {
+        require(_status == PoolStatus.FINISHED, "Pool is not FINISHED");
         _;
     }
 
@@ -139,15 +140,17 @@ contract Pool {
         external
         poolExists
         onlyPoolOwner
+        returns (bool)
     {
         require(users.length > 0, "users list is empty");
 
         for (uint256 i = 0; i < users.length; ++i) {
             _whitelist[users[i]] = true;
         }
+        return true;
     }
 
-    function updateStatus() external onlyPoolOwner {
+    function updateStatus() external onlyPoolOwner returns (bool) {
         // update status of Pool depending on the block timestamps
         if (
             _startTime < block.timestamp &&
@@ -156,12 +159,15 @@ contract Pool {
         ) {
             _status = PoolStatus.ONGOING;
             emit PoolIsOngoing();
+            return true;
         } else if (
             _endTime < block.timestamp && _status == PoolStatus.ONGOING
         ) {
-            _status == PoolStatus.FINISHED;
+            _status = PoolStatus.FINISHED;
             emit PoolIsFinished();
+            return true;
         }
+        return false;
     }
 
     function invest()
@@ -169,8 +175,9 @@ contract Pool {
         payable
         poolExists
         poolIsOnGoing
-        canInvest
+        whitelistedUser
         nonZero(msg.value)
+        returns (bool)
     {
         uint256 value = msg.value;
         uint256 tokenValue = value * _exchangeRate;
@@ -190,5 +197,30 @@ contract Pool {
         _tokenBalanceOf[msg.sender] = _tokenBalanceOf[msg.sender].add(
             tokenValue
         );
+        return true;
+    }
+
+    // once pool has ended
+    // investor can withdraw all tokens present in _tokenBalanceOf[investor]
+    function withdraw() external poolIsFinished whitelistedUser returns (bool) {
+        uint256 tokenBalance = _tokenBalanceOf[msg.sender];
+        require(tokenBalance > 0, "No amount present to withdraw");
+
+        // check spending allowance of this contract for pool owners tokens
+        require(
+            (IERC20(_projectTokenAddress).allowance(_owner, address(this))) >=
+                tokenBalance,
+            "Not enough allowance for project tokens"
+        );
+
+        _tokenBalanceOf[msg.sender] = 0;
+
+        IERC20(_projectTokenAddress).transferFrom(
+            _owner,
+            msg.sender,
+            tokenBalance
+        );
+
+        return true;
     }
 }
