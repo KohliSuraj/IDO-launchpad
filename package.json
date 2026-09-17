@@ -21,7 +21,10 @@
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "ganache-cli": "^6.12.2",
-    "truffle": "^5.4.17",
+    "truffle": "^5.11.5",
     "web3": "^1.6.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.3.2"
   }
 }
